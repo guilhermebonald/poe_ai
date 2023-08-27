@@ -64,49 +64,36 @@ class PoeAiGen:
         }
         response = self.main_request(json=query_data)
         data = response.get("data")
-        return data['chatOfBot']['chatId']
+        return data["chatOfBot"]["chatId"]
 
-
-    def send_msg(self, bot: str, message: str):
-        query = f"""
-            mutation AddHumanMessageMutation($chatId: BigInt!, $bot: String!, $query: String!, $source: MessageSource, $withChatBreak: Boolean! = false) {{
-                messageCreate(
-                    chatId: $chatId
-                    bot: $bot
-                    query: $query
-                    source: $source
-                    withChatBreak: $withChatBreak
-                ) {{
-                    __typename
-                    message {{
-                        __typename
-                        ...MessageFragment
-                        chat {{
-                            __typename
-                            id
-                            shouldShowDisclaimer
-                        }}
-                    }}
-                    chatBreak {{
-                        __typename
-                        ...MessageFragment
-                    }}
-                }}
-            }}
-        """
-        chat_id = self.get_chat_id(bot)
-        variables = {"chatId": chat_id, "bot": bot, "query": message, "source": False}
-        query_data = {
-            "operationName": "ChatViewQuery",
-            "query": query,
-            "variables": variables,
+    def send_msg(self, bot: str):
+        _id = self.get_chat_id(bot)
+        variables = {
+            "bot": bot,
+            "chatId": _id,
+            "query": "Bom dia!",
+            "source": {
+                "sourceType": "chat_input",
+                "chatInputMetadata": {"useVoiceRecord": False},
+            },
+            "withChatBreak": False,
+            "clientNonce": None,
+            "sdid": "",
+            "attachments": [],
         }
-        response = self.main_request(json=query_data)
-        return response
-
+        payload = {
+            "queryName": "SendMessageMutation",
+            "variables": variables,
+            "extensions": {
+                "hash": "5fd489242adf25bf399a95c6b16de9665e521b76618a97621167ae5e11e4bce4"
+            },
+        }
+        reponse = self.main_request(json=payload)
+        data = reponse.get('data')
+        return data["messageEdgeCreate"]["message"] 
 
 
 poe_key = "Uz2ntD3I7GyrsW-33U_d0A%3D%3D"
 quora_key = "3Wip-QviyZVPh0ZHgnRdzQ=="
 
-print(PoeAiGen(poe_key).send_msg(bot="chinchilla", message='Olá Mundo'))
+print(PoeAiGen(poe_key).send_msg("a2"))
