@@ -144,12 +144,24 @@ QUERIES = {
   "WebSubscriptionPaywallWrapperQuery": "f84fada22609f5dc5933e7ef1e54001fa5e76871836f268e68ad8df7e202f6ca",
 }
 
-def generate_payload(query_name, variables) -> str:
-    payload = {
+def query_generate(query_name, variables) -> str:
+    query = {
         "queryName": query_name,
         "variables": variables,
         "extensions": {
             "hash": QUERIES[query_name]
         }
     }
-    return json.dumps(payload, separators=(",", ":"))
+    return query
+
+    #TODO -----------------------------------------------------------------------------------------------------------
+    
+    #? - Esse é o tipo padrão de consulta GraphQL. Mas o que está sendo usado é um pouco diferente,
+    #? - usa "extensions" e realiza a consulta atraves de uma "hash", como no exemplo acima.
+    # {
+    #     'operationName': 'ChatViewQuery',
+    #     'query': 'query ChatViewQuery($bot: String!) {\n  chatOfBot(bot: $bot) {\n    __typename\n    ...ChatFragment\n  }\n}\nfragment ChatFragment on Chat {\n  __typename\n  id\n  chatId\n  defaultBotNickname\n  shouldShowDisclaimer\n}',
+    #     'variables': {
+    #         'bot': bot
+    #     }
+    # }    

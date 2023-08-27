@@ -1,12 +1,6 @@
 from httpx import Client
-import json
-from pathlib import Path
 from re import search
-
-# parent_path = Path(__file__).resolve().parent
-# queries_path = parent_path / "queries.json"
-
-# queries = json.loads(queries_path.read_text())
+import queries
 
 
 class PoeAiGen:
@@ -66,12 +60,30 @@ class PoeAiGen:
         data = response.get("data")
         return data["chatOfBot"]["chatId"]
 
-    def send_msg(self, bot: str):
-        _id = self.get_chat_id(bot)
+    def create_chat(self, bot: str = "chinchilla", message: str = ""):
         variables = {
             "bot": bot,
-            "chatId": _id,
-            "query": "Bom dia!",
+            "query": message,
+            "source": {
+                "sourceType": "chat_input",
+                "chatInputMetadata": {
+                    "useVoiceRecord": False,
+                    "newChatContext": "chat_settings_new_chat_button",
+                },
+            },
+            "sdid": "",
+            "attachments": [],
+        }
+        query = queries.query_generate('ChatHelpersSendNewChatMessageMutation', variables)
+        response = self.main_request(json=query)
+        return response['data']['messageEdgeCreate']['chat']
+
+    def send_msg(self, bot: str="chinchilla", message: str=""):
+        chat_id = self.get_chat_id(bot)
+        variables = {
+            "bot": bot,
+            "chatId": chat_id,
+            "query": message,
             "source": {
                 "sourceType": "chat_input",
                 "chatInputMetadata": {"useVoiceRecord": False},
@@ -81,19 +93,14 @@ class PoeAiGen:
             "sdid": "",
             "attachments": [],
         }
-        payload = {
-            "queryName": "SendMessageMutation",
-            "variables": variables,
-            "extensions": {
-                "hash": "5fd489242adf25bf399a95c6b16de9665e521b76618a97621167ae5e11e4bce4"
-            },
-        }
-        reponse = self.main_request(json=payload)
-        data = reponse.get('data')
-        return data["messageEdgeCreate"]["message"] 
+        query = queries.query_generate("SendMessageMutation", variables)
+        reponse = self.main_request(json=query)
+        data = reponse.get("data")
+        return data["messageEdgeCreate"]["message"]["node"]["attachments"]
 
 
 poe_key = "Uz2ntD3I7GyrsW-33U_d0A%3D%3D"
-quora_key = "3Wip-QviyZVPh0ZHgnRdzQ=="
+# quora_key = "3Wip-QviyZVPh0ZHgnRdzQ=="
 
-print(PoeAiGen(poe_key).send_msg("a2"))
+print(PoeAiGen(poe_key).send_msg(message="Quem é você?"))
+
