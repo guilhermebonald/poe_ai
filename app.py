@@ -1,6 +1,7 @@
 from httpx import Client
 from re import search
 import queries
+import json
 
 
 class PoeAiGen:
@@ -40,6 +41,7 @@ class PoeAiGen:
         return response.json()
 
     def get_chat_id(self, bot: str):
+        # ? tipo padrão de requisição do GraphQL
         query = """
             query ChatViewQuery($bot: String!) {
                 chatOfBot(bot: $bot) {
@@ -74,12 +76,15 @@ class PoeAiGen:
             "sdid": "",
             "attachments": [],
         }
-        query = queries.query_generate('ChatHelpersSendNewChatMessageMutation', variables)
+        query = queries.query_generate(
+            "ChatHelpersSendNewChatMessageMutation", variables
+        )
         response = self.main_request(json=query)
-        return response['data']['messageEdgeCreate']['chat']
+        return response["data"]["messageEdgeCreate"]["chat"]
 
-    def send_msg(self, bot: str="chinchilla", message: str=""):
+    def send_msg(self, bot: str, message: str):
         chat_id = self.get_chat_id(bot)
+        bot_response = []
         variables = {
             "bot": bot,
             "chatId": chat_id,
@@ -91,16 +96,12 @@ class PoeAiGen:
             "withChatBreak": False,
             "clientNonce": None,
             "sdid": "",
-            "attachments": [],
+            "attachments": bot_response,
         }
         query = queries.query_generate("SendMessageMutation", variables)
-        reponse = self.main_request(json=query)
-        data = reponse.get("data")
-        return data["messageEdgeCreate"]["message"]["node"]["attachments"]
+        response = self.main_request(json=query)
 
 
 poe_key = "Uz2ntD3I7GyrsW-33U_d0A%3D%3D"
-# quora_key = "3Wip-QviyZVPh0ZHgnRdzQ=="
 
-print(PoeAiGen(poe_key).send_msg(message="Quem é você?"))
-
+print(PoeAiGen(poe_key).send_msg(bot="chinchilla", message="Quem é você?"))

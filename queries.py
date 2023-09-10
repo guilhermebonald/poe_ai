@@ -156,8 +156,9 @@ def query_generate(query_name, variables) -> str:
 
     #TODO -----------------------------------------------------------------------------------------------------------
     
-    #? - Esse é o tipo padrão de consulta GraphQL. Mas o que está sendo usado é um pouco diferente,
-    #? - usa "extensions" e realiza a consulta atraves de uma "hash", como no exemplo acima.
+    #? - Esse (abaixo) é o tipo padrão de consulta GraphQL. Mas o que está sendo usado (acima) é um pouco diferente,
+    #? - usando "extensions" realiza a consulta atraves de uma "hash". 
+    #? - Por padrão as consultas usam o modelo abaixo.
     # {
     #     'operationName': 'ChatViewQuery',
     #     'query': 'query ChatViewQuery($bot: String!) {\n  chatOfBot(bot: $bot) {\n    __typename\n    ...ChatFragment\n  }\n}\nfragment ChatFragment on Chat {\n  __typename\n  id\n  chatId\n  defaultBotNickname\n  shouldShowDisclaimer\n}',
