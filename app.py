@@ -1,7 +1,6 @@
 from httpx import Client
 from re import search
 import queries
-import json
 
 
 class PoeAiGen:
@@ -41,7 +40,7 @@ class PoeAiGen:
         return response.json()
 
     def get_chat_id(self, bot: str):
-        # ? tipo padrão de requisição do GraphQL
+        # TODO - Padrão de requisição do GraphQL
         query = """
             query ChatViewQuery($bot: String!) {
                 chatOfBot(bot: $bot) {
@@ -99,9 +98,52 @@ class PoeAiGen:
             "attachments": bot_response,
         }
         query = queries.query_generate("SendMessageMutation", variables)
-        response = self.main_request(json=query)
+        response_json = self.main_request(json=query)
+        # message_data = response_json["data"]["messageEdgeCreate"]["chat"]
+        # return message_data
+
+    def get_last_msg(self):
+        query = """query ChatPaginationQuery($bot: String!, $before: String, $last: Int! = 10) {
+                        chatOfBot(bot: $bot) {
+                            id
+                            __typename
+                            messagesConnection(before: $before, last: $last) {
+                                pageInfo {
+                                    hasPreviousPage
+                                }
+                                edges {
+                                    node {
+                                        id
+                                        __typename
+                                        messageId
+                                        text
+                                        linkifiedText
+                                        authorNickname
+                                        state
+                                        vote
+                                        voteReason
+                                        creationTime
+                                        suggestedReplies
+                                    }
+                                }
+                            }
+                        }
+                    }
+                """
+        variables = {"bot": "chinchilla", "before": None}
+        query_data = {
+            "operationName": "ChatPaginationQuery",
+            "query": query,
+            "variables": variables,
+        }
+        response_json = self.main_request(json=query_data)
+        chatdata = response_json["data"]
+        # edges = chatdata['messagesConnection']['edges'][::-1]
+        return chatdata
 
 
 poe_key = "Uz2ntD3I7GyrsW-33U_d0A%3D%3D"
 
-print(PoeAiGen(poe_key).send_msg(bot="chinchilla", message="Quem é você?"))
+poe = PoeAiGen(poe_key)
+poe.send_msg(bot="chinchilla", message="Olá, Boa Noite?")
+print(poe.get_last_msg())
