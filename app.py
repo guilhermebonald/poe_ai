@@ -1,5 +1,6 @@
 from httpx import Client
 from re import search
+import time
 import queries
 
 
@@ -130,20 +131,25 @@ class PoeAiGen:
                         }
                     }
                 """
-        variables = {"bot": "chinchilla", "before": None}
+        variables = {"bot": "chinchilla", "before": None, "last": 1}
         query_data = {
             "operationName": "ChatPaginationQuery",
             "query": query,
             "variables": variables,
         }
-        response_json = self.main_request(json=query_data)
-        chatdata = response_json["data"]
-        # edges = chatdata['messagesConnection']['edges'][::-1]
-        return chatdata
+        while True:
+            time.sleep(2)
+            response = self.main_request(json=query_data)
+            text = response['data']['chatOfBot']['messagesConnection']['edges'][-1]['node']['text']
+            state = response['data']['chatOfBot']['messagesConnection']['edges'][-1]['node']['state']
+            author_nickname = response['data']['chatOfBot']['messagesConnection']['edges'][-1]['node']['authorNickname']
+            if author_nickname=="chinchilla" and state=='complete':
+                break
+        return text
 
 
 poe_key = "Uz2ntD3I7GyrsW-33U_d0A%3D%3D"
 
 poe = PoeAiGen(poe_key)
-poe.send_msg(bot="chinchilla", message="Olá, Boa Noite?")
+poe.send_msg(bot="chinchilla", message="Olá, Bom dia!")
 print(poe.get_last_msg())
