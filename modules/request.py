@@ -1,5 +1,6 @@
 from re import search
 from abc import ABC, abstractmethod
+from httpx import Client
 
 
 class RequestInterface(ABC):
@@ -46,4 +47,26 @@ class DoRequest(RequestInterface):
 
     def main_request(self, json: dict):
         response = self.client.post(url=f"{self.URL_BASE}/poe_api/gql_POST", json=json)
-        return response.json()
+        if response.status_code == 200 and response.json()["data"] is not None:
+            return response.json()
+        raise RuntimeError(f"ERROR OCURRED: {response.json()['errors'][0]['message']} // STATUS CODE: {response.status_code}")
+
+
+# TEST
+# query_data = """
+#             query ChatViewQuery($bot: String!) {
+#                 chatOfBot(bot: $bot) {
+#                     id
+#                     chatId
+#                     defaultBotNickname
+#                     shouldShowDisclaimer
+#                 }
+#             }
+#         """
+# variables = {"bot": "chinchilla"}
+# query = {
+#     "operationName": "ChatViewQuery",
+#     "query": query_data,
+#     "variables": variables,
+# }
+# print(DoRequest(Client, "Uz2ntD3I7GyrsW-33U_d0A%3D%3D").main_request(query))
