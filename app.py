@@ -35,7 +35,7 @@ class PoeAiGen(PoeInterface):
 
     def get_chat_id(self, bot: str):
         # TODO - Padrão de requisição do GraphQL
-        query = """
+        query_data = """
             query ChatViewQuery($bot: String!) {
                 chatOfBot(bot: $bot) {
                     id
@@ -48,7 +48,7 @@ class PoeAiGen(PoeInterface):
         variables = {"bot": bot}
         query = {
             "operationName": "ChatViewQuery",
-            "query": query,
+            "query": query_data,
             "variables": variables,
         }
         response = self.request.DoRequest(self.client, self.cookie).main_request(
