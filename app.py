@@ -1,44 +1,34 @@
 from httpx import Client
-from re import search
 import time
-import queries
+import modules.queries as queries
+import modules.request as req
+from abc import ABC, abstractmethod
 
 
-class PoeAiGen:
-    URL_BASE = "https://pt.quora.com"
-    HEADERS = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Sec-Ch-Ua": '"Not.A/Brand";v="8", "Chromium";v="112"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": '"Linux"',
-        "Upgrade-Insecure-Requests": "1",
-    }
-    FORMKEY_PATTERN = r'formkey": "(.*?)"'
+class PoeInterface(ABC):
+    @abstractmethod
+    def get_chat_id(self, bot: str):
+        pass
 
-    def __init__(self, cookie: str):
-        self.client = Client(base_url=self.URL_BASE, timeout=5)
-        self.client.cookies.set("m-b", cookie)
-        self.client.headers.update(
-            {
-                **self.HEADERS,
-                "Quora-Formkey": self.get_formkey(),  # FormKey é gerado dinamicamente cada vez que a página é solicitada.
-            }
-        )
+    @abstractmethod
+    def create_chat(self, bot: str = "chinchilla", message: str = ""):
+        pass
 
-    def get_formkey(self):
-        # Captura o código fonte da página e coleta e faz uma busca pelo FormKey
-        response = self.client.get(
-            self.URL_BASE, headers=self.HEADERS, follow_redirects=True
-        )
-        formkey = search(self.FORMKEY_PATTERN, response.text)[1]
-        return formkey
+    @abstractmethod
+    def send_msg(self, bot: str, message: str):
+        pass
 
-    def main_request(self, json: dict):
-        response = self.client.post(url=f"{self.URL_BASE}/poe_api/gql_POST", json=json)
-        return response.json()
+    @abstractmethod
+    def get_last_msg(self):
+        pass
+
+
+class PoeAiGen(PoeInterface):
+    def __init__(self, request, client, cookie):
+        # This is necessary because of the abstraction of the request class - Dependency Injection!
+        self.request = request
+        self.client = client
+        self.cookie = cookie
 
     def get_chat_id(self, bot: str):
         # TODO - Padrão de requisição do GraphQL
@@ -53,12 +43,14 @@ class PoeAiGen:
             }
         """
         variables = {"bot": bot}
-        query_data = {
+        query = {
             "operationName": "ChatViewQuery",
             "query": query,
             "variables": variables,
         }
-        response = self.main_request(json=query_data)
+        response = self.request.DoRequest(self.client, self.cookie).main_request(
+            json=query
+        )
         data = response.get("data")
         return data["chatOfBot"]["chatId"]
 
@@ -79,7 +71,9 @@ class PoeAiGen:
         query = queries.query_generate(
             "ChatHelpersSendNewChatMessageMutation", variables
         )
-        response = self.main_request(json=query)
+        response = self.request.DoRequest(self.client, self.cookie).main_request(
+            json=query
+        )
         return response["data"]["messageEdgeCreate"]["chat"]
 
     def send_msg(self, bot: str, message: str):
@@ -99,7 +93,9 @@ class PoeAiGen:
             "attachments": bot_response,
         }
         query = queries.query_generate("SendMessageMutation", variables)
-        response_json = self.main_request(json=query)
+        response_json = self.request.DoRequest(self.client, self.cookie).main_request(
+            json=query
+        )
         # message_data = response_json["data"]["messageEdgeCreate"]["chat"]
         # return message_data
 
@@ -132,24 +128,32 @@ class PoeAiGen:
                     }
                 """
         variables = {"bot": "chinchilla", "before": None, "last": 1}
-        query_data = {
+        query = {
             "operationName": "ChatPaginationQuery",
             "query": query,
             "variables": variables,
         }
         while True:
             time.sleep(2)
-            response = self.main_request(json=query_data)
-            text = response['data']['chatOfBot']['messagesConnection']['edges'][-1]['node']['text']
-            state = response['data']['chatOfBot']['messagesConnection']['edges'][-1]['node']['state']
-            author_nickname = response['data']['chatOfBot']['messagesConnection']['edges'][-1]['node']['authorNickname']
-            if author_nickname=="chinchilla" and state=='complete':
+            response = self.request.DoRequest(self.client, self.cookie).main_request(
+                json=query
+            )
+            text = response["data"]["chatOfBot"]["messagesConnection"]["edges"][-1][
+                "node"
+            ]["text"]
+            state = response["data"]["chatOfBot"]["messagesConnection"]["edges"][-1][
+                "node"
+            ]["state"]
+            author_nickname = response["data"]["chatOfBot"]["messagesConnection"][
+                "edges"
+            ][-1]["node"]["authorNickname"]
+            if author_nickname == "chinchilla" and state == "complete":
                 break
         return text
 
 
 poe_key = "Uz2ntD3I7GyrsW-33U_d0A%3D%3D"
 
-poe = PoeAiGen(poe_key)
-poe.send_msg(bot="chinchilla", message="Olá, Bom dia!")
-print(poe.get_last_msg())
+# poe = PoeAiGen(request=req, client=Client, cookie=poe_key)
+# poe.send_msg(bot="chinchilla", message="ele tinha irmão?")
+# print(poe.get_last_msg())
