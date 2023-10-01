@@ -3,7 +3,10 @@ import time
 import modules.queries as queries
 import modules.request as req
 from abc import ABC, abstractmethod
+from dotenv import load_dotenv
+from os import getenv   
 
+load_dotenv()
 
 class PoeInterface(ABC):
     @abstractmethod
@@ -152,8 +155,8 @@ class PoeAiGen(PoeInterface):
         return text
 
 
-poe_key = "Uz2ntD3I7GyrsW-33U_d0A%3D%3D"
+poe_key = getenv("POE-KEY")
 
-# poe = PoeAiGen(request=req, client=Client, cookie=poe_key)
-# poe.send_msg(bot="chinchilla", message="ele tinha irmão?")
-# print(poe.get_last_msg())
+poe = PoeAiGen(request=req, client=Client, cookie=poe_key)
+poe.send_msg(bot="chinchilla", message="Bom Dia!")
+print(poe.get_last_msg())
