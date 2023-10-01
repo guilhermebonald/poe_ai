@@ -1,6 +1,18 @@
 from re import search
+from abc import ABC, abstractmethod
 
-class DoRequest:
+
+class RequestInterface(ABC):
+    @abstractmethod
+    def get_formkey(self):
+        pass
+
+    @abstractmethod
+    def main_request(self, json: dict):
+        pass
+
+
+class DoRequest(RequestInterface):
     URL_BASE = "https://pt.quora.com"
     HEADERS = {
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36",
