@@ -28,7 +28,6 @@ class PoeInterface(ABC):
 
 class PoeAiGen(PoeInterface):
     def __init__(self, request, client, cookie):
-        # This is necessary because of the abstraction of the request class - Dependency Injection!
         self.request = request
         self.client = client
         self.cookie = cookie
