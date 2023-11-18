@@ -4,9 +4,10 @@ import modules.queries as queries
 import modules.request as req
 from abc import ABC, abstractmethod
 from dotenv import load_dotenv
-from os import getenv   
+from os import getenv
 
 load_dotenv()
+
 
 class PoeInterface(ABC):
     @abstractmethod
@@ -27,10 +28,10 @@ class PoeInterface(ABC):
 
 
 class PoeAiGen(PoeInterface):
-    def __init__(self, request, client, cookie):
+    def __init__(self, request, client, key_cookie):
         self.request = request
         self.client = client
-        self.cookie = cookie
+        self.key_cookie = key_cookie
 
     def get_chat_id(self, bot: str):
         # TODO - Padrão de requisição do GraphQL
@@ -50,7 +51,7 @@ class PoeAiGen(PoeInterface):
             "query": query_data,
             "variables": variables,
         }
-        response = self.request.DoRequest(self.client, self.cookie).main_request(
+        response = self.request.DoRequest(self.client, self.key_cookie).main_request(
             json=query
         )
         data = response.get("data")
@@ -73,7 +74,7 @@ class PoeAiGen(PoeInterface):
         query = queries.query_generate(
             "ChatHelpersSendNewChatMessageMutation", variables
         )
-        response = self.request.DoRequest(self.client, self.cookie).main_request(
+        response = self.request.DoRequest(self.client, self.key_cookie).main_request(
             json=query
         )
         return response["data"]["messageEdgeCreate"]["chat"]
@@ -95,9 +96,9 @@ class PoeAiGen(PoeInterface):
             "attachments": bot_response,
         }
         query = queries.query_generate("SendMessageMutation", variables)
-        response_json = self.request.DoRequest(self.client, self.cookie).main_request(
-            json=query
-        )
+        response_json = self.request.DoRequest(
+            self.client, self.key_cookie
+        ).main_request(json=query)
         # message_data = response_json["data"]["messageEdgeCreate"]["chat"]
         # return message_data
 
@@ -137,9 +138,9 @@ class PoeAiGen(PoeInterface):
         }
         while True:
             time.sleep(2)
-            response = self.request.DoRequest(self.client, self.cookie).main_request(
-                json=query
-            )
+            response = self.request.DoRequest(
+                self.client, self.key_cookie
+            ).main_request(json=query)
             text = response["data"]["chatOfBot"]["messagesConnection"]["edges"][-1][
                 "node"
             ]["text"]
@@ -154,8 +155,11 @@ class PoeAiGen(PoeInterface):
         return text
 
 
-poe_key = getenv("POE-KEY")
+# poe_key = getenv("POE-KEY")
 
-poe = PoeAiGen(request=req, client=Client, cookie=poe_key)
-poe.send_msg(bot="chinchilla", message="Bom Dia!")
-print(poe.get_last_msg())
+# poe = PoeAiGen(request=req, client=Client, key_cookie=poe_key)
+# poe.send_msg(
+#     bot="chinchilla",
+#     message="Esse fenomeno é normal ou acontece por causa do aquecimento global?",
+# )
+# print(poe.get_last_msg())
